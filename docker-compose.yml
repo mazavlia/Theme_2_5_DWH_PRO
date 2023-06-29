@@ -2,13 +2,13 @@ version: '1.0'
 services:
   sql_retail:
     image: postgres:latest
-    container_name: sales_planning
+    container_name: sales_planning_pro
     ports: 
-      - 5435:5432
+      - 5436:5432
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: sales_planning
+      POSTGRES_DB: sales_planning_pro
     volumes:
       - ./sql_scripts/ddl/1_ddl.sql:/docker-entrypoint-initdb.d/1_ddl.sql
       - ./sql_scripts/dml/2_dml.sql:/docker-entrypoint-initdb.d/2_dml.sql
