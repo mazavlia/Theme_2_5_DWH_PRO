@@ -36,11 +36,11 @@ WITH union_shops_tabl AS (SELECT * FROM shop_citilink
 			  		FROM union_shops_tabl us
 			  		JOIN promo pm ON us.shop_id = pm.shop_id AND us.product_id = pm.product_id AND us.sale_date = promo_date),
 	full_sales AS (SELECT shop_id, product_id, 
- 	 				MAX(sales_cnt) max_sales_quer, 
- 					sale_date, SUM(sales_cnt) promo_count
- 					FROM union_shops_tabl
- 					WHERE DATE_PART('MONTH',  sale_date) = 5 
- 					GROUP BY sale_date, shop_id, product_id),
+ 	 			   MAX(sales_cnt) max_sales_quer, 
+ 				   sale_date, SUM(sales_cnt) promo_count
+ 				   FROM union_shops_tabl
+ 				   WHERE DATE_PART('MONTH',  sale_date) = 5 
+ 				   GROUP BY sale_date, shop_id, product_id),
  	max_count_day AS (SELECT ut.shop_id, ut.product_id, max(sales_cnt) AS max_sales, max(max_sale_date) max_sale_date
 					  FROM union_shops_tabl ut 
 					  JOIN (SELECT shop_id, product_id, min(sale_date) max_sale_date
