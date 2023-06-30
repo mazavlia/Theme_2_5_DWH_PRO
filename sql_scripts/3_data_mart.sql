@@ -41,9 +41,18 @@ WITH union_shops_tabl AS (SELECT * FROM shop_citilink
  					FROM union_shops_tabl
  					WHERE DATE_PART('MONTH',  sale_date) = 5 
  					GROUP BY sale_date, shop_id, product_id),
- 	calc_max_date AS (SELECT shop_id, product_id, max(sales_cnt), sale_date
-			  		  FROM union_shops_tabl 
-			  		  GROUP BY shop_id, product_id, sale_date, sales_cnt)
+ 	max_count_day AS (SELECT ut.shop_id, ut.product_id, max(sales_cnt) AS max_sales, max(max_sale_date) max_sale_date
+						FROM union_shops_tabl ut 
+						JOIN (SELECT shop_id, product_id, min(sale_date) max_sale_date
+								FROM union_shops_tabl
+								WHERE date_part('month', sale_date) = 5
+								GROUP BY shop_id, product_id, sales_cnt
+								HAVING sales_cnt = max(sales_cnt)
+								ORDER BY shop_id, product_id) u 
+						ON ut.shop_id = u.shop_id AND ut.product_id = u.product_id AND max_sale_date = u.max_sale_date
+						WHERE ut.shop_id = u.shop_id AND ut.product_id = u.product_id AND max_sale_date = u.max_sale_date
+						GROUP BY ut.shop_id, ut.product_id
+						ORDER BY shop_id, product_id)				
 SELECT shop_name, 
 	   product_name, 
 	   SUM(sales_cnt) sales_fact,
@@ -53,10 +62,10 @@ SELECT shop_name,
 	   SUM(full_price * plan_cnt) income_plan,
 	   ROUND(SUM(full_price * sales_cnt)::NUMERIC / SUM(full_price * plan_cnt), 2) "income_fact/income_plan",
 	   ROUND(SUM(sales_cnt)::NUMERIC / COUNT(us.sale_date), 2) "avg(sales/date)",
-	   MAX(fact_sales) max_sales, 
-	   (SELECT sale_date FROM sales WHERE fact_sales = (SELECT max(fact_sales) FROM sales)) max_sale_date,
+	   MAX(max_sales) max_sales,
+	   MAX(max_sale_date) date_max_sales,
 	   (SELECT CASE 
-		   	   WHEN (SELECT s.sale_date FROM sales s GROUP BY s.sale_date HAVING MAX(s.fact_sales) = (SELECT MAX(fact_sales) FROM sales)) IN (SELECT promo_date FROM promo) 
+		   	   WHEN MAX(max_sale_date) IN (SELECT promo_date FROM promo) 
 		   	   THEN 'TRUE' ELSE 'FALSE' 
 		   	   END) date_max_sales_is_promo,
 	   ROUND((SUM(sales_cnt)::NUMERIC / COUNT(us.sale_date)) / MAX(fact_sales), 2) "avg(sales/date) / max_sales",
@@ -72,6 +81,7 @@ JOIN plan p ON us.product_id = p.product_id AND us.shop_id = p.shop_id AND us.sa
 JOIN price_promo pp ON us.shop_id = pp.shop_id AND us.product_id = pp.product_id AND us.sale_date = pp.sale_date
 JOIN sales s ON s.sale_date = us.sale_date AND s.shop_id = us.shop_id AND s.product_id = us.product_id AND s.sale_date = us.sale_date
 LEFT JOIN promo_sales ps ON ps.shop_id = us.shop_id AND ps.product_id = us.product_id AND ps.sale_date = us.sale_date
+JOIN max_count_day m ON us.shop_id = m.shop_id AND us.product_id = m.product_id
 WHERE DATE_PART('MONTH',  us.sale_date) = 5
 GROUP BY shop_name, product_name
 ORDER BY shop_name, product_name
