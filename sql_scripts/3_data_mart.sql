@@ -42,17 +42,17 @@ WITH union_shops_tabl AS (SELECT * FROM shop_citilink
  					WHERE DATE_PART('MONTH',  sale_date) = 5 
  					GROUP BY sale_date, shop_id, product_id),
  	max_count_day AS (SELECT ut.shop_id, ut.product_id, max(sales_cnt) AS max_sales, max(max_sale_date) max_sale_date
-						FROM union_shops_tabl ut 
-						JOIN (SELECT shop_id, product_id, min(sale_date) max_sale_date
-								FROM union_shops_tabl
-								WHERE date_part('month', sale_date) = 5
-								GROUP BY shop_id, product_id, sales_cnt
-								HAVING sales_cnt = max(sales_cnt)
-								ORDER BY shop_id, product_id) u 
-						ON ut.shop_id = u.shop_id AND ut.product_id = u.product_id AND max_sale_date = u.max_sale_date
-						WHERE ut.shop_id = u.shop_id AND ut.product_id = u.product_id AND max_sale_date = u.max_sale_date
-						GROUP BY ut.shop_id, ut.product_id
-						ORDER BY shop_id, product_id)				
+					  FROM union_shops_tabl ut 
+					  JOIN (SELECT shop_id, product_id, min(sale_date) max_sale_date
+							FROM union_shops_tabl
+							WHERE date_part('month', sale_date) = 5
+							GROUP BY shop_id, product_id, sales_cnt
+							HAVING sales_cnt = max(sales_cnt)
+							ORDER BY shop_id, product_id) u 
+					   ON ut.shop_id = u.shop_id AND ut.product_id = u.product_id AND max_sale_date = sale_date
+					   WHERE ut.shop_id = u.shop_id AND ut.product_id = u.product_id AND max_sale_date = u.max_sale_date
+					   GROUP BY ut.shop_id, ut.product_id
+					   ORDER BY shop_id, product_id)				
 SELECT shop_name, 
 	   product_name, 
 	   SUM(sales_cnt) sales_fact,
